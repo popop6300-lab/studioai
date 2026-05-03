@@ -13,12 +13,17 @@ app.get('/', (req, res) => {
 
 app.post('/chat', async (req, res) => {
   const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'No message' });
+  
   try {
+    const apiKey = process.env.CLAUDE_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'API Key no configurada' });
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.CLAUDE_API_KEY,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
@@ -28,31 +33,24 @@ app.post('/chat', async (req, res) => {
         messages: [{ role: 'user', content: message }]
       })
     });
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(500).json({ error: err });
+    }
+
     const data = await response.json();
     const text = data.content[0].text;
     const codeMatch = text.match(/<ROBLOX_CODE>([\s\S]*?)<\/ROBLOX_CODE>/);
+    
     if (codeMatch) {
       pendingCommands.push({ id: Date.now(), code: codeMatch[1].trim(), description: message });
     }
+    
     res.json({
       reply: text.replace(/<ROBLOX_CODE>[\s\S]*?<\/ROBLOX_CODE>/g, '').trim(),
       hasCode: !!codeMatch
     });
+
   } catch(e) {
-    console.error('Error:', e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/poll', (req, res) => {
-  if (pendingCommands.length > 0) {
-    res.json({ hasCommand: true, command: pendingCommands.shift() });
-  } else {
-    res.json({ hasCommand: false });
-  }
-});
-
-app.post('/confirm', (req, res) => res.json({ ok: true }));
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
+    console.error('Error:',
