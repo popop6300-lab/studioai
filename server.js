@@ -24,7 +24,7 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        system: `Eres un asistente de Roblox Studio. Cuando el usuario pida objetos, responde amigable y pon el código Lua entre <ROBLOX_CODE> y </ROBLOX_CODE>. Usa InsertService para assets del Toolbox o crea objetos con Parts si no existen. Assets conocidos: árbol=93792160, casa=1139788, roca=6359216, auto=695796.`,
+        system: 'Eres un asistente de Roblox Studio. Cuando el usuario pida objetos, responde amigable y pon el codigo Lua entre <ROBLOX_CODE> y </ROBLOX_CODE>. Usa InsertService para assets del Toolbox o crea objetos con Parts. Assets: arbol=93792160, casa=1139788, roca=6359216, auto=695796.',
         messages: [{ role: 'user', content: message }]
       })
     });
@@ -39,7 +39,8 @@ app.post('/chat', async (req, res) => {
       hasCode: !!codeMatch
     });
   } catch(e) {
-    res.status(500).json({ error: 'Error del servidor' });
+    console.error('Error:', e);
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -54,4 +55,4 @@ app.get('/poll', (req, res) => {
 app.post('/confirm', (req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Servidor corriendo!'));
+app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
