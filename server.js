@@ -54,3 +54,6 @@ app.post('/chat', async (req, res) => {
 
   } catch(e) {
     console.error('Error:',
+
+
+                  app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
